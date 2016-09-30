@@ -97,18 +97,22 @@ const (
 	podHostIPLabel                = metaLabelPrefix + "pod_host_ip"
 )
 
-func (p *Pod) buildPod(pod *apiv1.Pod) *config.TargetGroup {
-	tg := &config.TargetGroup{
-		Source: podSource(pod),
-	}
-	tg.Labels = model.LabelSet{
-		namespaceLabel:   lv(pod.Namespace),
+func podLabels(pod *apiv1.Pod) model.LabelSet {
+	return model.LabelSet{
 		podNameLabel:     lv(pod.ObjectMeta.Name),
 		podAddressLabel:  lv(pod.Status.PodIP),
 		podReadyLabel:    podReady(pod),
 		podNodeNameLabel: lv(pod.Spec.NodeName),
 		podHostIPLabel:   lv(pod.Status.HostIP),
 	}
+}
+
+func (p *Pod) buildPod(pod *apiv1.Pod) *config.TargetGroup {
+	tg := &config.TargetGroup{
+		Source: podSource(pod),
+	}
+	tg.Labels = podLabels(pod)
+	tg.Labels[namespaceLabel] = lv(pod.Namespace)
 
 	for _, c := range pod.Spec.Containers {
 		// If no ports are defined for the container, create an anonymous
